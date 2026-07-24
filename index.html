@@ -6,7 +6,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Yungatha Job Sheet Scanner</title>
+<title>Yungatha Excel Gaming</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -47,6 +47,13 @@
   #importStatus .ok{color:var(--green);}
   #importStatus .warn{color:var(--red);}
   #importStatus .info{color:var(--blue);}
+  #debugPanel{margin-top:12px;}
+  .debug-box{border:1px dashed var(--line);border-radius:8px;padding:12px 14px;background:var(--steel-light);}
+  .debug-box .debug-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .debug-box .debug-head span{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text-mute);}
+  .debug-box .debug-copy{background:var(--charcoal);color:var(--orange);border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;}
+  .debug-box .debug-copy:hover{background:var(--charcoal-2);}
+  .debug-box pre{max-height:260px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin:0;}
 
   /* ===== OPTION MANAGER ===== */
   .opt-manager{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:6px;}
@@ -79,12 +86,15 @@
   table.rowtable td.jobcell input{width:80px;font-family:'JetBrains Mono',monospace;font-weight:700;}
   table.rowtable td.qtycell input{width:56px;text-align:center;font-family:'JetBrains Mono',monospace;font-weight:700;}
   table.rowtable td.dimcell input{width:110px;font-family:'JetBrains Mono',monospace;}
+  table.rowtable input.unset{border-color:var(--red);background:#FDEEEA;}
   table.rowtable select.unset{border-color:var(--red);background:#FDEEEA;}
   table.rowtable select.auto{border-color:var(--orange);background:#FFF6EC;}
   table.rowtable select.bucketsel{font-size:11.5px;width:150px;}
   .rm-btn{background:none;border:none;color:var(--red);font-size:19px;cursor:pointer;padding:2px 6px;line-height:1;}
   .dim-warn{color:var(--red);font-size:10.5px;font-weight:700;margin-top:2px;}
   .src-tag{font-size:10px;color:var(--text-mute);font-family:'JetBrains Mono',monospace;margin-top:4px;}
+  .add-to-group-btn{display:block;margin-top:6px;background:none;border:1px dashed var(--orange);color:var(--orange-dark);font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;cursor:pointer;}
+  .add-to-group-btn:hover{background:#FFF1E3;}
   table.rowtable tr.just-added{background:#FFF9EC;}
   table.rowtable tr.just-added:hover td{background:#FFF3DC;}
   table.rowtable tr.just-added td.jobcell,table.rowtable tr.just-added td:nth-child(2){box-shadow:inset 3px 0 0 var(--orange);}
@@ -95,6 +105,14 @@
 
   .empty-note{padding:18px;text-align:center;color:var(--text-mute);font-size:14px;}
 
+  .summary-card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:22px;}
+  .summary-card .bucket-head h3{font-size:15px;}
+  table.summarytable{width:100%;border-collapse:collapse;font-size:14px;}
+  table.summarytable th{font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--text-mute);background:var(--steel-light);padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);}
+  table.summarytable td{padding:8px 12px;border-bottom:1px solid #ECEEF0;}
+  table.summarytable td.sdim{font-family:'JetBrains Mono',monospace;font-weight:700;}
+  table.summarytable td.sqty{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:16px;}
+
   .print-bar{display:flex;justify-content:center;margin:26px 0 10px;}
   .print-btn{background:var(--orange);color:#fff;border:none;padding:16px 40px;border-radius:10px;font-family:'Oswald',sans-serif;font-size:19px;text-transform:uppercase;letter-spacing:0.6px;cursor:pointer;box-shadow:0 4px 0 var(--orange-dark);}
   .print-btn:hover{background:#ff7a2e;}
@@ -102,25 +120,38 @@
 
   /* ===== PRINT AREA (built dynamically, hidden on screen) ===== */
   #printArea{display:none;}
-  .p-title-band{padding:10px 0;text-align:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:20px;letter-spacing:.3px;text-transform:uppercase;color:#111;border:1px solid #999;}
+  .print-letterhead{text-align:center;border-bottom:2px solid var(--line);padding-bottom:6px;margin-bottom:14px;}
+  .print-company{font-family:'Oswald',sans-serif;font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--text-mute);}
+  .print-sub{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--text-mute);margin-top:2px;}
+  .p-title-band{padding:10px 14px;text-align:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:20px;letter-spacing:.3px;text-transform:uppercase;color:#111;border:1px solid #999;border-bottom:none;}
   .p-table{width:100%;border-collapse:collapse;margin-bottom:26px;font-family:'Inter',sans-serif;}
   .p-table th,.p-table td{border:1px solid #666;padding:6px 8px;font-size:12.5px;text-align:center;}
-  .p-table thead.p-colhead th{background:#FFF200;font-weight:700;text-transform:uppercase;font-size:11px;}
+  .p-table thead.p-colhead th{background:#F3E6A8;font-weight:700;text-transform:uppercase;font-size:11px;}
   .p-table td.p-desc{text-align:left;font-weight:600;}
   .p-table td.p-job,.p-table td.p-client{font-weight:700;font-family:'JetBrains Mono',monospace;}
   .p-table td.p-dim{font-family:'JetBrains Mono',monospace;}
   .p-tally{width:60px;}
   .p-footer{display:flex;justify-content:space-between;font-size:11px;color:#444;margin-top:6px;font-family:'JetBrains Mono',monospace;}
+  .p-summary-block{margin-top:8px;}
+  .p-cutsum-table{width:100%;max-width:440px;border-collapse:collapse;font-family:'Inter',sans-serif;font-size:12px;}
+  .p-cutsum-table th,.p-cutsum-table td{border:1px solid #999;padding:4px 10px;}
+  .p-cutsum-table td.p-cutsum-section{background:#E7E9EC;font-weight:700;text-transform:uppercase;font-size:11.5px;}
+  .p-cutsum-table thead th{background:#EEF0F2;font-weight:700;text-transform:uppercase;font-size:10px;text-align:left;}
+  .p-cutsum-table td.p-sdim{font-family:'JetBrains Mono',monospace;font-weight:700;}
+  .p-cutsum-table td.p-sqty{font-family:'JetBrains Mono',monospace;font-weight:800;text-align:center;}
 
   @media print{
+    body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     body > *:not(#printArea){display:none!important;}
     #printArea{display:block!important;}
     .p-title-band{page-break-after:avoid;page-break-inside:avoid;}
-    .p-table{page-break-inside:auto;}
+    .p-table{page-break-inside:auto;border-left:6px solid #999;}
     .p-table thead{display:table-header-group;}
     .p-table tr{page-break-inside:avoid;}
+    .p-cutsum-table{page-break-inside:avoid;}
     @page{size:A4 landscape;margin:10mm;}
   }
+
 
   /* ===== ACCESS GATE ===== */
   #aitGate{position:fixed;inset:0;z-index:9999;background:var(--charcoal);display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -145,7 +176,7 @@
     <div class="gateLock">
       <svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     </div>
-    <h2>Yungatha &mdash; Job Sheet Scanner</h2>
+    <h2>Yungatha &mdash; Excel Gaming</h2>
     <p>Licensed tool. Enter the access code to continue.</p>
     <input type="password" id="aitGateInput" placeholder="ACCESS CODE" autocomplete="off">
     <button class="gateBtn" onclick="aitCheckCode()">Unlock</button>
@@ -180,7 +211,7 @@
 
 <header>
   <div>
-    <h1>YUNGATHA <span>Job Sheet</span> Scanner</h1>
+    <h1>YUNGATHA <span>Excel</span> Gaming</h1>
     <div class="tag">Scans job sheets into a print-ready cut sheet &mdash; matches the Strut/Streetplates &amp; Cut Optimiser calculators</div>
   </div>
   <div class="hdr-actions">
@@ -211,6 +242,7 @@
     </div>
     <input type="file" id="fileInput" accept="application/pdf,image/*" multiple>
     <div id="importStatus"></div>
+    <div id="debugPanel"></div>
   </div>
 
   <div class="card">
@@ -258,6 +290,8 @@
 
   <div id="tablesContainer"></div>
 
+  <div id="cutSummaryContainer"></div>
+
   <div class="print-bar">
     <button class="print-btn" onclick="printCutSheet()">Print / Generate Cut Sheet (Landscape A4)</button>
   </div>
@@ -282,10 +316,10 @@ const KNOWN_TYPES = [
 ];
 
 const BUCKETS = {
-  STD16:  {title:'METAL PRODUCTION SHEET (1.6mm Standard)', band:'#BEE3F2', order:1},
-  MRWA20: {title:'METAL PRODUCTION SHEET (2.0 MRWA)',       band:'#E9D3EF', order:2},
-  ACM:    {title:'METAL PRODUCTION SHEET (ACM/SIGNBOND)',   band:'#D3EBC2', order:3},
-  STEEL:  {title:'METAL PRODUCTION SHEET (STEEL)',          band:'#D3DEE8', order:4}
+  STD16:  {title:'METAL PRODUCTION SHEET (1.6mm Standard)', band:'#BEE3F2', accent:'#2B7FB8', order:1},
+  MRWA20: {title:'METAL PRODUCTION SHEET (2.0 MRWA)',       band:'#E9D3EF', accent:'#9B4DB0', order:2},
+  ACM:    {title:'METAL PRODUCTION SHEET (ACM/SIGNBOND)',   band:'#D3EBC2', accent:'#3E8E4F', order:3},
+  STEEL:  {title:'METAL PRODUCTION SHEET (STEEL)',          band:'#D3DEE8', accent:'#5A6B7A', order:4}
 };
 
 const QUAD_STAND_SIZES = ['600x450','450x600','900x600','600x900'];
@@ -319,6 +353,7 @@ let clientMap = loadJSON(CLIENT_KEY, Object.assign({}, DEFAULT_CLIENT_MAP));
 let rowIdCounter = allRows.reduce((m,r)=>Math.max(m, r.id||0), 0) + 1;
 let batchCounter = allRows.reduce((m,r)=>Math.max(m, r.batchId||0), 0) + 1;
 let lastBatchId = loadJSON(BATCH_KEY, null);
+let lastRawScan = null; // {file, usedOCR, lines} for the debug panel -- not persisted, cleared each session
 
 function loadJSON(key, fallback){
   try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; }
@@ -381,6 +416,8 @@ async function handleOneFile(file){
       usedOCR = true;
     }
     const parsed = parseLines(lines, pageWidth);
+    lastRawScan = {file: file.name, usedOCR, lines: lines.map(l=>l.items.map(it=>it.str).join(' | ')).join('\n')};
+    renderDebugPanel();
     if(parsed.rows.length === 0){
       logStatus(`&#9888; <b>${escapeHtml(file.name)}</b>: no recognised sign items found. Job/Client may still have been read &mdash; check below or add rows manually.`, 'warn');
     } else {
@@ -506,13 +543,44 @@ function parseLines(lines, pageWidth){
   }
   if(colQtyX===null) colQtyX = 0;
 
-  const body = headerIdx===-1 ? lines : lines.slice(headerIdx+1);
+  let body = headerIdx===-1 ? lines : lines.slice(headerIdx+1);
+  if(headerIdx!==-1){
+    // The header line itself sometimes has more than just its own five
+    // labels on it -- if the gap between the header and the very first data
+    // row was tighter than the median row gap elsewhere on the page, the
+    // clustering step above can pull the start of that first row up into
+    // the header line. Recover anything beyond the expected label words so
+    // the first item isn't silently dropped.
+    const labelWords = /^(QTY\/?|UNITS?|ITEM|NO\.?|DESCRIPTION)$/i;
+    const stray = lines[headerIdx].items.filter(it => !labelWords.test(it.str.trim()));
+    if(stray.length){
+      body = [{y: lines[headerIdx].y, items: stray}, ...body];
+    }
+  }
   const inItemCol = it => it.x >= colItemX-6 && it.x < colDescX-6;
   const inDescCol = it => it.x >= colDescX-6;
   const inQtyCol  = it => it.x < colItemX-6;
 
   const matchType = text => {
     for(const t of KNOWN_TYPES){ if(t.test.test(text)) return t.key; }
+    return null;
+  };
+  // Fallback for when OCR drops a word entirely -- most often "Aluminium"
+  // goes missing on the row sitting right under the header's rule line,
+  // leaving just "Sign" behind. These are deliberately loose since they're
+  // a last resort, but still constrained to the ITEM NO. column position,
+  // which nothing else in the document ever populates.
+  const LOOSE_TYPES = [
+    {key:'2mm Aluminium Sign', test:/\b2\s*mm\b/i},
+    {key:'1.6mm Aluminium Sign', test:/1\.?6\s*mm/i},
+    {key:'ACM/Signbond Sign', test:/acm|signbond/i},
+    {key:'Sign On Quad Stand', test:/quad/i},
+    {key:'Steel Sign', test:/steel/i},
+    {key:'Aluminium Sign', test:/sign|alumin/i}
+  ];
+  const looseMatchType = text => {
+    if(!text) return null;
+    for(const t of LOOSE_TYPES){ if(t.test.test(text)) return t.key; }
     return null;
   };
   const itemColText = line => line.items.filter(inItemCol).map(it=>it.str).join(' ').trim();
@@ -531,9 +599,26 @@ function parseLines(lines, pageWidth){
         if(m2){ matched = m2; wrapUsed = 1; }
       }
     }
+    if(!matched){
+      matched = looseMatchType(combined);
+      // Only try combining with the next line if THIS line actually
+      // contributed something to the item column -- otherwise an empty
+      // line (e.g. a reference note with nothing in that column) can end
+      // up "borrowing" the identity of the next real item and swallowing
+      // its whole block into the wrong (earlier, unrelated) row.
+      if(!matched && combined && i+1 < body.length){
+        const nxt = itemColText(body[i+1]);
+        const comboLoose = looseMatchType((combined + ' ' + nxt).trim());
+        if(comboLoose){ matched = comboLoose; wrapUsed = 1; }
+      }
+    }
     if(!matched){ i++; continue; }
 
-    const qtyText = body[i].items.filter(inQtyCol).map(it=>it.str).join(' ');
+    // Quantity usually sits on the same row as the first word of the item
+    // type, but when the type label wraps onto a second line (e.g. "Steel" /
+    // "Sign"), the qty digit can end up aligned with that second line instead.
+    const qtyLines = wrapUsed>0 ? [body[i], body[i+wrapUsed]] : [body[i]];
+    const qtyText = qtyLines.map(l=>l.items.filter(inQtyCol).map(it=>it.str).join(' ')).join(' ');
     const qtyMatch = qtyText.match(/\d+/);
     const quantity = qtyMatch ? qtyMatch[0] : '';
 
@@ -557,23 +642,51 @@ function parseLines(lines, pageWidth){
     // the first handful of lines. Capping this also protects against sheets
     // where a single line item is followed by a wall of unrelated notes with
     // no further item-type marker to stop at (e.g. a multi-board Steel entry).
-    const MAX_DESC_LINES = 6;
+    // Kept generous (not tight to the ~4-5 lines actually used) because a
+    // line that contributes nothing to the description column (e.g. the
+    // item-type label sitting alone when the loose matcher had to kick in)
+    // still eats into this budget without adding anything -- too tight a
+    // cap was cutting off before reaching the MRWA reference line.
+    const MAX_DESC_LINES = 8;
     const descLines = [];
     for(let x=i; x<Math.min(k, i+MAX_DESC_LINES); x++){
       const dt = body[x].items.filter(inDescCol).map(it=>it.str).join(' ').trim();
       if(dt) descLines.push(dt);
     }
+    // OCR occasionally isolates the "x" between two dimension numbers onto
+    // its own clustered line (e.g. "600 600" / "x" / "GRADER IN SE" as three
+    // separate lines instead of "600 x 600" on one) -- fold a lone "x"/"X"
+    // back into the line before it so the matchers below can see it.
+    for(let x=descLines.length-1; x>=1; x--){
+      if(/^[xX]$/.test(descLines[x])){
+        descLines[x-1] = descLines[x-1] + ' x';
+        descLines.splice(x,1);
+      }
+    }
 
     // Try, in order, a WxH pair ("2400mm x 1200mm", "1500 X 750", "750x750"),
-    // a diamond shape ("750mm Diamond"), or a Give Way triangle ("900 High").
+    // a diamond shape ("750mm Diamond"), a Give Way triangle ("900 High"),
+    // or a round sign given as diameter/"Dia"/"Circle" ("600 Dia").
     // "mm" is optional and allowed on either or both sides of the separator.
     const DIM_PATTERNS = [
       {re:/(\d{2,4})\s*(?:mm)?\.?\s*[xX\u00d7]\s*(\d{2,4})\s*(?:mm)?\.?/i, fmt:m=>`${m[1]}x${m[2]}`},
       {re:/(\d{2,4})\s*(?:mm)?\.?\s*diamond/i, fmt:m=>`${m[1]} Diamond`},
-      {re:/(\d{2,4})\s*(?:mm)?\.?\s*(?:high|triangle)\b/i, fmt:m=>`${m[1]} Triangle`}
+      {re:/(\d{2,4})\s*(?:mm)?\.?\s*(?:high|triangle)\b/i, fmt:m=>`${m[1]} Triangle`},
+      {re:/(\d{2,4})\s*(?:mm)?\.?\s*(?:dia\b(?!mond)|circle)/i, fmt:m=>`${m[1]} Circle`}
     ];
     const findDim = text => {
-      for(const p of DIM_PATTERNS){ const m = text.match(p.re); if(m) return p.fmt(m); }
+      for(const p of DIM_PATTERNS){ const m = text.match(p.re); if(m) return {formatted:p.fmt(m), matchIndex:m.index}; }
+      // OCR sometimes shuffles word order within a line -- "600 x 600" can
+      // come back as "600 600 x". If a line has exactly two 2-4 digit
+      // numbers and a standalone "x" anywhere on it, treat it as WxH --
+      // and point matchIndex at the first digit, not 0, so any real text
+      // before the numbers (e.g. "Custom Sign") is still recovered as
+      // prefix text instead of silently discarded.
+      const nums = text.match(/\b\d{2,4}\b/g);
+      if(nums && nums.length===2 && /(^|\s)x(\s|$)/i.test(text)){
+        const firstNum = text.match(/\b\d{2,4}\b/);
+        return {formatted:`${nums[0]}x${nums[1]}`, matchIndex:firstNum.index};
+      }
       return null;
     };
 
@@ -582,18 +695,45 @@ function parseLines(lines, pageWidth){
     // numerical values ... will fall under dimensions". Anything found beyond
     // that (or the rest of descLines) is reference-only, never displayed.
     const SEARCH_WINDOW = 3;
-    let dimIdx = -1, dimensions = '';
+    let dimIdx = -1, dimensions = '', prefixText = '';
     for(let x=0; x<Math.min(SEARCH_WINDOW, descLines.length); x++){
       const found = findDim(descLines[x]);
-      if(found){ dimIdx = x; dimensions = found; break; }
+      if(found){
+        dimIdx = x; dimensions = found.formatted;
+        // Sometimes the dimension is embedded in the same line as real text
+        // instead of sitting on its own line, e.g. "Custom Sign 600 x 600" --
+        // recover whatever comes before the match on that line instead of
+        // treating the whole line as pure dimension and losing it.
+        prefixText = descLines[x].slice(0, found.matchIndex).trim();
+        break;
+      }
     }
     let description, referenceText;
     if(dimIdx===-1){
       description = descLines.slice(0, Math.min(2, descLines.length)).join(' ');
       referenceText = descLines.slice(2).join(' ');
     } else {
-      description = descLines.slice(0,dimIdx).join(' ');
-      referenceText = descLines.slice(dimIdx+1).join(' ');
+      let before = descLines.slice(0,dimIdx);
+      const hadPrefix = !!prefixText;
+      if(prefixText) before.push(prefixText);
+      let refStart = dimIdx+1;
+      // Pull in bonus lines (up to 2 total chunks) when there's not enough
+      // to go on -- either the dimension line was shared with other text
+      // (hadPrefix), the dimension sat completely alone as the very first
+      // line found, or the description so far is just "Custom Sign" on its
+      // own (these always carry a real message on the next line). A clean
+      // "code on its own line, dimension on its own separate line" sheet
+      // already has enough in `before` and is left untouched. Never pull a
+      // bare MRWA reference tag in as if it were real content.
+      const isBareCustomSign = /^custom\s*sign$/i.test(before.join(' ').trim());
+      if(before.length===0 || hadPrefix || isBareCustomSign){
+        while(before.length<2 && descLines[refStart] && !/^MRWA\b/i.test(descLines[refStart])){
+          before.push(descLines[refStart]);
+          refStart++;
+        }
+      }
+      description = before.join(' ').trim();
+      referenceText = descLines.slice(refStart).join(' ');
     }
     const fullBlockText = descLines.join(' ');
     const hasMRWA = /\bMRWA\b/i.test(fullBlockText);
@@ -629,11 +769,19 @@ function applyAutoDefaults(row){
   } else if(row.client === 'DTS'){
     row.drilling = 'No Holes'; row.drillingAuto = true;
   }
-  const m = row.dimensions.match(/^(\d+)x(\d+)$/);
-  if(m){
-    const a = parseInt(m[1],10), b = parseInt(m[2],10);
-    row.crop = Math.min(a,b) >= 450 ? '50mm Crop' : '40mm Crop';
-    row.cropAuto = true;
+
+  if(/stop\s*sign/i.test(row.description)){
+    row.crop = 'STOP SIGN'; row.cropAuto = true;
+  } else if(/triangle|circle/i.test(row.dimensions)){
+    // Give Way triangles and round/Dia signs are always 50mm Crop, regardless of size.
+    row.crop = '50mm Crop'; row.cropAuto = true;
+  } else {
+    const m = row.dimensions.match(/^(\d+)x(\d+)$/);
+    if(m){
+      const a = parseInt(m[1],10), b = parseInt(m[2],10);
+      row.crop = Math.min(a,b) >= 450 ? '50mm Crop' : '40mm Crop';
+      row.cropAuto = true;
+    }
   }
 }
 
@@ -682,6 +830,15 @@ function addManualRow(bucket){
   renderTables();
 }
 
+function addRowToGroup(bucket, jobNumber, client){
+  allRows.push({
+    id: rowIdCounter++, source:'manual', batchId: null, jobNumber, client, itemType:'', description:'',
+    dimensions:'', quantity:'', hasMRWA:false, strutted:false, bucket, crop:'', drilling:'', cropAuto:false, drillingAuto:false
+  });
+  saveRows();
+  renderTables();
+}
+
 function markAllReviewed(){
   lastBatchId = null;
   saveBatch();
@@ -702,11 +859,15 @@ function updateRowField(id, field, value){
     // Keep the crop suggestion in sync while the person is still typing/
     // correcting the dimensions, but only until they've manually confirmed
     // a crop choice of their own.
-    const m = value.match(/^(\d+)x(\d+)$/);
-    if(m){
-      const a=parseInt(m[1],10), b=parseInt(m[2],10);
-      row.crop = Math.min(a,b) >= 450 ? '50mm Crop' : '40mm Crop';
-      row.cropAuto = true;
+    if(/triangle|circle/i.test(value)){
+      row.crop = '50mm Crop'; row.cropAuto = true;
+    } else {
+      const m = value.match(/^(\d+)x(\d+)$/);
+      if(m){
+        const a=parseInt(m[1],10), b=parseInt(m[2],10);
+        row.crop = Math.min(a,b) >= 450 ? '50mm Crop' : '40mm Crop';
+        row.cropAuto = true;
+      }
     }
   }
   saveRows();
@@ -734,6 +895,29 @@ function logStatus(html, cls){
   line.innerHTML = html;
   box.appendChild(line);
   box.scrollTop = box.scrollHeight;
+}
+
+// Shows exactly what the scan engine read, line by line, for the most
+// recently scanned file -- for diagnosing a bad read without guessing
+// backwards from a screenshot of the parsed result.
+function renderDebugPanel(){
+  const box = document.getElementById('debugPanel');
+  if(!lastRawScan){ box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="debug-box">
+    <div class="debug-head">
+      <span>Raw scan text &mdash; ${escapeHtml(lastRawScan.file)}${lastRawScan.usedOCR?' (via OCR)':' (text layer)'}</span>
+      <button class="debug-copy" onclick="copyDebugText()">Copy</button>
+    </div>
+    <pre id="debugText">${escapeHtml(lastRawScan.lines)}</pre>
+  </div>`;
+}
+function copyDebugText(){
+  if(!lastRawScan) return;
+  navigator.clipboard.writeText(lastRawScan.lines).then(()=>{
+    logStatus('&#10003; Raw scan text copied &mdash; paste it into the chat.', 'ok');
+  }).catch(()=>{
+    logStatus('Could not copy automatically -- select the text in the box above and copy manually.', 'warn');
+  });
 }
 
 function renderOptionChips(){
@@ -847,10 +1031,10 @@ function renderTables(){
         html += `<tr data-id="${r.id}" class="${isNew?'just-added':''}">`;
         if(gi===0){
           html += `<td class="jobcell" rowspan="${span}">${isNew?'<span class="new-badge">NEW</span><br>':''}<input type="text" data-groupfield="jobNumber" data-groupids="${groupIds}" value="${escapeHtml(r.jobNumber)}"></td>
-            <td rowspan="${span}"><input type="text" data-groupfield="client" data-groupids="${groupIds}" value="${escapeHtml(r.client)}"><div class="src-tag">${escapeHtml(r.source||'')}${span>1?' &middot; '+span+' items':''}</div></td>`;
+            <td rowspan="${span}"><input type="text" data-groupfield="client" data-groupids="${groupIds}" value="${escapeHtml(r.client)}"><div class="src-tag">${escapeHtml(r.source||'')}${span>1?' &middot; '+span+' items':''}</div><button class="add-to-group-btn" data-bucket="${bk}" data-jobnum="${escapeHtml(r.jobNumber)}" data-client="${escapeHtml(r.client)}">+ Add Item</button></td>`;
         }
-        html += `<td><input type="text" data-field="description" value="${escapeHtml(r.description)}"></td>
-          <td class="dimcell"><input type="text" data-field="dimensions" value="${escapeHtml(r.dimensions)}">${quadWarn}</td>
+        html += `<td><input type="text" data-field="description" class="${r.description?'':'unset'}" value="${escapeHtml(r.description)}"></td>
+          <td class="dimcell"><input type="text" data-field="dimensions" class="${r.dimensions?'':'unset'}" value="${escapeHtml(r.dimensions)}">${quadWarn}</td>
           <td class="qtycell"><input type="text" data-field="quantity" value="${escapeHtml(r.quantity)}"></td>
           <td>${selectHtml(cropOptions, r.crop, 'cropsel', r.cropAuto)}</td>
           <td>${selectHtml(drillOptions, r.drilling, 'drillsel', r.drillingAuto)}</td>
@@ -863,6 +1047,52 @@ function renderTables(){
   });
   if(!html){
     html = `<div class="card"><div class="empty-note">No items yet &mdash; drag a job sheet PDF into the box above, or start a table manually.</div></div>`;
+  }
+  container.innerHTML = html;
+  renderCutSummary();
+}
+
+// Aggregates every row in a bucket by exact Dimensions text, summing
+// Quantity -- e.g. 10x 450x600 on one job + 25x 450x600 on another job both
+// print as a single "35" line, since that's what actually gets cut from
+// stock regardless of which client/job it's for.
+function buildCutSummary(bucketKey){
+  const rows = allRows.filter(r=>r.bucket===bucketKey && r.dimensions);
+  const totals = {}; const order = [];
+  rows.forEach(r=>{
+    const key = r.dimensions;
+    const qty = parseInt(r.quantity,10) || 0;
+    if(!(key in totals)){ totals[key]=0; order.push(key); }
+    totals[key]+=qty;
+  });
+  order.sort((a,b)=>{
+    const na=a.match(/^(\d+)x(\d+)$/), nb=b.match(/^(\d+)x(\d+)$/);
+    if(na&&nb) return (parseInt(na[1])*parseInt(na[2])) - (parseInt(nb[1])*parseInt(nb[2]));
+    if(na&&!nb) return -1;
+    if(!na&&nb) return 1;
+    return a.localeCompare(b);
+  });
+  return order.map(k=>({dimensions:k, qty:totals[k]}));
+}
+
+function renderCutSummary(){
+  const container = document.getElementById('cutSummaryContainer');
+  const bucketKeys = Object.keys(BUCKETS).sort((a,b)=>BUCKETS[a].order-BUCKETS[b].order);
+  let html = '';
+  bucketKeys.forEach(bk=>{
+    const summary = buildCutSummary(bk);
+    if(summary.length===0) return;
+    const meta = BUCKETS[bk];
+    html += `<div class="summary-card">
+      <div class="bucket-head" style="background:${meta.band};"><h3>Cut Summary &mdash; ${meta.title.replace('METAL PRODUCTION SHEET ','')}</h3></div>
+      <table class="summarytable"><thead><tr><th>Dimensions</th><th>Total Qty To Cut</th></tr></thead><tbody>`;
+    summary.forEach(s=>{
+      html += `<tr><td class="sdim">${escapeHtml(s.dimensions)}</td><td class="sqty">${s.qty}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+  });
+  if(html){
+    html = `<div class="card"><h2>Cut Summary &mdash; Reference For Your Aluminium Cut Calculator</h2></div>` + html;
   }
   container.innerHTML = html;
 }
@@ -888,6 +1118,9 @@ document.addEventListener('input', e=>{
   if(!tr || !e.target.dataset.field) return;
   const id = parseInt(tr.dataset.id,10);
   updateRowField(id, e.target.dataset.field, e.target.value);
+  if(e.target.dataset.field==='description' || e.target.dataset.field==='dimensions'){
+    e.target.classList.toggle('unset', !e.target.value.trim());
+  }
 });
 document.addEventListener('change', e=>{
   const tr = e.target.closest('tr[data-id]');
@@ -904,6 +1137,13 @@ document.addEventListener('change', e=>{
     e.target.classList.toggle('unset', !e.target.value);
   } else if(e.target.dataset.role==='bucketsel'){
     if(row){ row.bucket = e.target.value; saveRows(); renderTables(); }
+  }
+});
+
+document.addEventListener('click', e=>{
+  const btn = e.target.closest('.add-to-group-btn');
+  if(btn){
+    addRowToGroup(btn.dataset.bucket, btn.dataset.jobnum, btn.dataset.client);
   }
 });
 
@@ -969,14 +1209,18 @@ function groupByJob(rows){
 }
 
 function buildPrintHTML(){
+  const dateStr = new Date().toLocaleDateString('en-AU');
+  let html = `<div class="print-letterhead">
+    <div class="print-company">Yungatha Pty Ltd &mdash; Excel Gaming</div>
+    <div class="print-sub">Workshop Cutting Sheet &nbsp;&middot;&nbsp; Printed ${dateStr}</div>
+  </div>`;
   const bucketKeys = Object.keys(BUCKETS).sort((a,b)=>BUCKETS[a].order-BUCKETS[b].order);
-  let html = '';
   bucketKeys.forEach(bk=>{
     const rows = groupByJob(allRows.filter(r=>r.bucket===bk));
     if(rows.length===0) return;
     const meta = BUCKETS[bk];
-    html += `<div class="p-title-band" style="background:${meta.band};">${meta.title}</div>
-      <table class="p-table">
+    html += `<div class="p-title-band" style="background:${meta.band};border-left:6px solid ${meta.accent};">${meta.title}</div>
+      <table class="p-table" style="border-left-color:${meta.accent};">
         <thead class="p-colhead"><tr>
           <th style="width:70px;">Job Number</th><th style="width:140px;">Client</th>
           <th>Description</th><th style="width:120px;">Dimensions</th><th style="width:60px;">Quantity</th>
@@ -1005,8 +1249,26 @@ function buildPrintHTML(){
     }
     html += `</tbody></table>`;
   });
-  const dateStr = new Date().toLocaleDateString('en-AU');
-  html += `<div class="p-footer"><span>Yungatha Pty Ltd &mdash; Job Sheet Scanner Cut Sheet</span><span>Printed ${dateStr}</span></div>`;
+
+  // Cut Summary -- one compact table, all materials, sized to slot into
+  // whatever room is left after the last production table rather than
+  // forcing a whole new page for a handful of numbers.
+  const summaryBuckets = bucketKeys.filter(bk=>buildCutSummary(bk).length>0);
+  if(summaryBuckets.length){
+    html += `<div class="p-summary-block"><table class="p-cutsum-table">`;
+    summaryBuckets.forEach(bk=>{
+      const meta = BUCKETS[bk];
+      const summary = buildCutSummary(bk);
+      html += `<tr><td colspan="2" class="p-cutsum-section" style="border-left:4px solid ${meta.accent};">Cut Summary &mdash; ${meta.title.replace('METAL PRODUCTION SHEET ','')}</td></tr>
+        <tr><th>Dimensions</th><th>Total</th></tr>`;
+      summary.forEach(s=>{
+        html += `<tr><td class="p-sdim">${escapeHtml(s.dimensions)}</td><td class="p-sqty">${s.qty}</td></tr>`;
+      });
+    });
+    html += `</table></div>`;
+  }
+
+  html += `<div class="p-footer"><span>Yungatha Pty Ltd &mdash; Excel Gaming Cut Sheet</span><span>Printed ${dateStr}</span></div>`;
   return html;
 }
 
