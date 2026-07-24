@@ -48,12 +48,18 @@
   #importStatus .warn{color:var(--red);}
   #importStatus .info{color:var(--blue);}
   #debugPanel{margin-top:12px;}
-  .debug-box{border:1px dashed var(--line);border-radius:8px;padding:12px 14px;background:var(--steel-light);}
-  .debug-box .debug-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-  .debug-box .debug-head span{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text-mute);}
-  .debug-box .debug-copy{background:var(--charcoal);color:var(--orange);border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;}
+  .debug-box{border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden;}
+  .debug-box summary{list-style:none;cursor:pointer;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:var(--steel-light);font-size:12px;font-weight:700;color:var(--text-mute);user-select:none;}
+  .debug-box summary::-webkit-details-marker{display:none;}
+  .debug-box summary::after{content:'\25BE';font-size:13px;color:var(--text-mute);transition:transform .15s;}
+  .debug-box[open] summary::after{transform:rotate(180deg);}
+  .debug-box summary .debug-file{font-weight:500;color:var(--text-mute);text-transform:none;letter-spacing:0;}
+  .debug-box .debug-body{padding:12px 14px;}
+  .debug-box .debug-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:12px;}
+  .debug-box .debug-head span{font-size:11px;color:var(--text-mute);}
+  .debug-box .debug-copy{background:var(--charcoal);color:var(--orange);border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
   .debug-box .debug-copy:hover{background:var(--charcoal-2);}
-  .debug-box pre{max-height:260px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin:0;}
+  .debug-box pre{max-height:260px;overflow:auto;background:var(--steel-light);border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin:0;}
 
   /* ===== OPTION MANAGER ===== */
   .opt-manager{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:6px;}
@@ -677,14 +683,17 @@ function parseLines(lines, pageWidth){
     const findDim = text => {
       for(const p of DIM_PATTERNS){ const m = text.match(p.re); if(m) return {formatted:p.fmt(m), matchIndex:m.index}; }
       // OCR sometimes shuffles word order within a line -- "600 x 600" can
-      // come back as "600 600 x". If a line has exactly two 2-4 digit
-      // numbers and a standalone "x" anywhere on it, treat it as WxH --
-      // and point matchIndex at the first digit, not 0, so any real text
-      // before the numbers (e.g. "Custom Sign") is still recovered as
-      // prefix text instead of silently discarded.
-      const nums = text.match(/\b\d{2,4}\b/g);
+      // come back as "600 600 x", or "225mm x 450mm" as "225mm 450mm x".
+      // If a line has exactly two 2-4 digit numbers and a standalone "x"
+      // anywhere on it, treat it as WxH -- and point matchIndex at the
+      // first digit, not 0, so any real text before the numbers (e.g.
+      // "Custom Sign") is still recovered as prefix text instead of
+      // silently discarded. "mm" is stripped first since \b doesn't see a
+      // boundary between a digit and a letter glued straight onto it.
+      const stripped = text.replace(/mm/gi, ' ');
+      const nums = stripped.match(/\b\d{2,4}\b/g);
       if(nums && nums.length===2 && /(^|\s)x(\s|$)/i.test(text)){
-        const firstNum = text.match(/\b\d{2,4}\b/);
+        const firstNum = stripped.match(/\b\d{2,4}\b/);
         return {formatted:`${nums[0]}x${nums[1]}`, matchIndex:firstNum.index};
       }
       return null;
@@ -745,24 +754,43 @@ function parseLines(lines, pageWidth){
       description: description.trim(), dimensions, quantity,
       hasMRWA, strutted, bucket, crop:'', drilling:'', cropAuto:false, drillingAuto:false
     };
-    applyAutoDefaults(row);
+    applyAutoDefaults(row, referenceText);
     rows.push(row);
     i = k;
   }
   return {jobNumber, client, rows};
 }
 
+// If the sheet itself literally states a drilling instruction in the
+// reference text (e.g. "Post Holes" written under a custom sign's notes),
+// that's ground truth and should win over any inferred default below.
+function detectExplicitDrilling(text){
+  if(!text) return null;
+  const options = [
+    {re:/\bpost\s*holes?\b/i, val:'Post Holes'},
+    {re:/\bcorner\s*holes?\b/i, val:'Corner Holes'},
+    {re:/\bno\s*holes?\b/i, val:'No Holes'},
+    {re:/\bstrutted\b/i, val:'Strutted'},
+    {re:/\bquad\s*stand\b/i, val:'Quadstand'}
+  ];
+  for(const o of options){ if(o.re.test(text)) return o.val; }
+  return null;
+}
+
 // Fills Crop/Drilling with a sensible default per the shop's standing rules,
 // but only ever as a *suggestion* -- every field stays editable, and the
 // select is flagged 'auto' on screen so it's obvious it wasn't confirmed by
 // a person yet.
-function applyAutoDefaults(row){
+function applyAutoDefaults(row, referenceText){
   if(row.strutted){
     row.drilling = 'Strutted'; row.drillingAuto = true;
     row.crop = '50mm Crop'; row.cropAuto = true;
     return;
   }
-  if(/triangle/i.test(row.dimensions)){
+  const explicitDrilling = detectExplicitDrilling(referenceText);
+  if(explicitDrilling){
+    row.drilling = explicitDrilling; row.drillingAuto = true;
+  } else if(/triangle/i.test(row.dimensions)){
     row.drilling = 'Post Holes'; row.drillingAuto = true;
   } else if(row.client === 'MRWA'){
     row.drilling = 'Post Holes'; row.drillingAuto = true;
@@ -903,13 +931,18 @@ function logStatus(html, cls){
 function renderDebugPanel(){
   const box = document.getElementById('debugPanel');
   if(!lastRawScan){ box.innerHTML = ''; return; }
-  box.innerHTML = `<div class="debug-box">
-    <div class="debug-head">
-      <span>Raw scan text &mdash; ${escapeHtml(lastRawScan.file)}${lastRawScan.usedOCR?' (via OCR)':' (text layer)'}</span>
-      <button class="debug-copy" onclick="copyDebugText()">Copy</button>
+  box.innerHTML = `<details class="debug-box">
+    <summary>
+      <span>&#128269; Raw Scan Text <span class="debug-file">&mdash; ${escapeHtml(lastRawScan.file)}${lastRawScan.usedOCR?' (via OCR)':' (text layer)'}</span></span>
+    </summary>
+    <div class="debug-body">
+      <div class="debug-head">
+        <span>For diagnosing a bad read &mdash; copy and share if something looks wrong</span>
+        <button class="debug-copy" onclick="copyDebugText()">Copy</button>
+      </div>
+      <pre id="debugText">${escapeHtml(lastRawScan.lines)}</pre>
     </div>
-    <pre id="debugText">${escapeHtml(lastRawScan.lines)}</pre>
-  </div>`;
+  </details>`;
 }
 function copyDebugText(){
   if(!lastRawScan) return;
