@@ -281,6 +281,12 @@
 
 
 
+  .p-summary-title{background:#d9f4fa;border:2px solid #111820;border-left:12px solid #079ac1;color:#06161c;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:800;letter-spacing:.08em;margin:18px 0 0;padding:9px 12px;text-transform:uppercase;}
+  .p-summary-table{background:#fff;border-collapse:collapse;color:#0a0d10;font-family:Arial,Helvetica,sans-serif;font-size:11px;margin:0 0 12px;width:100%;}
+  .p-summary-table th,.p-summary-table td{background:#fff;border:1.25px solid #1b242b;color:#0a0d10;padding:6px 8px;text-align:left;}
+  .p-summary-table th{background:#d9f4fa;color:#06161c;font-weight:800;text-transform:uppercase;}
+  .p-summary-table td.p-summary-qty,.p-summary-table td.p-summary-items{text-align:center;font-family:'Courier New',Courier,monospace;font-weight:800;}
+
   /* LIMIT BREAKER PRINT CONTRAST FIX */
   @media print {
     html, body, #printArea {
@@ -1239,6 +1245,25 @@ function buildPrintHTML(){
     }
     html += `</tbody></table>`;
   });
+  // Overall cut summary: keep material separate, then consolidate identical dimensions.
+  const cutSummary = {};
+  allRows.forEach(r=>{
+    const material = BUCKETS[r.bucket] ? BUCKETS[r.bucket].title.replace('METAL PRODUCTION SHEET ','') : (r.bucket || 'Unassigned');
+    const dimensions = (r.dimensions || '').trim() || 'Not specified';
+    const key = `${material}||${dimensions}`;
+    if(!cutSummary[key]) cutSummary[key] = {material, dimensions, items:0, quantity:0};
+    cutSummary[key].items += 1;
+    const qty = parseInt(String(r.quantity || '').replace(/[^0-9-]/g,''), 10);
+    if(Number.isFinite(qty)) cutSummary[key].quantity += qty;
+  });
+  const summaryRows = Object.values(cutSummary).sort((a,b)=>a.material.localeCompare(b.material) || a.dimensions.localeCompare(b.dimensions, undefined, {numeric:true}));
+  html += `<div class="p-summary-title">OVERALL CUT NEEDED</div>
+    <table class="p-summary-table"><thead><tr>
+      <th>Material</th><th>Dimensions</th><th>Items</th><th>Total Quantity</th>
+    </tr></thead><tbody>${summaryRows.map(s=>`<tr>
+      <td>${escapeHtml(s.material)}</td><td>${escapeHtml(s.dimensions)}</td>
+      <td class="p-summary-items">${s.items}</td><td class="p-summary-qty">${s.quantity || ''}</td>
+    </tr>`).join('')}</tbody></table>`;
   const dateStr = new Date().toLocaleDateString('en-AU');
   html += `<div class="p-footer"><span>Yungatha Pty Ltd &mdash; Job Sheet Scanner Cut Sheet</span><span>Printed ${dateStr}</span></div>`;
   return html;
